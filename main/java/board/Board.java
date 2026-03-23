@@ -84,6 +84,122 @@ public class Board {
     public List<Piece> getCaptured() { return captured; }
     
     /**
+     * Attempts to move a piece from one position to another.
+     * Checks if the move is valid according to the piece's movement rules.
+     * If a piece is captured, it is added to the captured list.
+     * @param from the starting position
+     * @param to the destination position
+     * @return true if the move was successful, false otherwise
+     */
+    public boolean movePiece(Position from, Position to) {
+        if (!Position.isValid(from.row, from.col) || !Position.isValid(to.row, to.col)) return false;
+        Piece p = getPiece(from);
+        if (p == null) return false;
+        if (!p.possibleMoves(this, from).contains(to)) return false;
+        Piece dest = getPiece(to);
+        if (dest != null) captured.add(dest);
+        set(to.row, to.col, p);
+        set(from.row, from.col, null);
+        return true;
+    }
+
+    /**
+     * Sets a piece at the specified row and column.
+     * @param row the row index
+     * @param col the column index
+     * @param p the piece to place, or null to clear the square
+     */
+    public void set(int row, int col, Piece p) {
+        if (!Position.isValid(row, col)) return;
+        grid[row][col] = p;
+    }
+
+    /**
+     * Checks if the path between two positions is clear of pieces.
+     * Used for sliding pieces like rooks, bishops, and queens.
+     * @param from the starting position
+     * @param to the ending position
+     * @return true if the path is clear, false if blocked
+     */
+    public boolean isPathClear(Position from, Position to) {
+        int dr = Integer.compare(to.row, from.row);
+        int dc = Integer.compare(to.col, from.col);
+        if (dr == 0 && dc == 0) return true;
+        int r = from.row + dr;
+        int c = from.col + dc;
+        while (r != to.row || c != to.col) {
+            if (grid[r][c] != null) return false;
+            r += dr;
+            c += dc;
+        }
+        return true;
+    }
+
+    /**
+     * Checks if the king of the specified color is in check.
+     * @param color the color of the king to check
+     * @return true if the king is in check, false otherwise
+     */
+    public boolean isCheck(Color color) {
+        Position kingPos = null;
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = grid[r][c];
+                if (p != null && p.getType() == PieceType.KING && p.getColor() == color) {
+                    kingPos = new Position(r, c);
+                    break;
+                }
+            }
+            if (kingPos != null) break;
+        }
+        if (kingPos == null) return false;
+
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = grid[r][c];
+                if (p != null && p.getColor() != color) {
+                    if (p.possibleMoves(this, new Position(r,c)).contains(kingPos)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the king of the specified color is in checkmate.
+     * This is a brute-force implementation that checks if any legal move can remove the check.
+     * @param color the color of the king to check
+     * @return true if the king is in checkmate, false otherwise
+     */
+    public boolean isCheckmate(Color color) {
+        if (!isCheck(color)) return false;
+
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = grid[r][c];
+                if (p == null || p.getColor() != color) continue;
+                for (int tr = 0; tr < 8; tr++) {
+                    for (int tc = 0; tc < 8; tc++) {
+                        Position from = new Position(r,c);
+                        Position to = new Position(tr,tc);
+                        Piece dest = grid[tr][tc];
+                        if (!p.possibleMoves(this, from).contains(to)) continue;
+                        // make move
+                        grid[tr][tc] = p;
+                        grid[r][c] = null;
+                        boolean stillInCheck = isCheck(color);
+                        // undo
+                        grid[r][c] = p;
+                        grid[tr][tc] = dest;
+                        if (!stillInCheck) return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
      * Prints the current board state to the console.
      */
     public void display() {
