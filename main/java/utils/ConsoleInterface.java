@@ -1,5 +1,7 @@
 package utils;
 
+import java.util.Scanner;
+
 import board.Board;
 
 /**
@@ -7,6 +9,43 @@ import board.Board;
  * Manages input parsing, move validation, and game loop.
  */
 public class ConsoleInterface {
+    /** Scanner for reading user input. */
+    private final Scanner scanner = new Scanner(System.in);
+
+    /**
+     * Runs the main game loop, displaying the board and processing user moves.
+     * @param board the chess board to play on
+     */
+    public void runGame(Board board) {
+        board.initStandardSetup();
+        System.out.println("Initial position:");
+        System.out.println(board);
+
+        while (true) {
+            System.out.print("Enter move (e2 e4 or e2e4), or 'quit': ");
+            if (!scanner.hasNextLine()) break;
+            String line = scanner.nextLine().trim();
+            if (line.equalsIgnoreCase("quit") || line.equalsIgnoreCase("exit")) break;
+            if (line.isEmpty()) continue;
+
+            try {
+                Move move = parseMove(line);
+                if (move != null) {
+                    boolean ok = board.movePiece(move.from, move.to);
+                    System.out.println("Move " + move.fromString + "->" + move.toString + ": " + ok);
+                    if (ok) {
+                        System.out.println(board);
+                    }
+                } else {
+                    System.out.println("Invalid move format. Example: e2 e4 or e2e4");
+                }
+            } catch (IllegalArgumentException ex) {
+                System.out.println("Invalid square: " + ex.getMessage());
+            }
+        }
+
+        System.out.println("Goodbye.");
+    }
 
     /**
      * Parses a move string into from and to positions.
