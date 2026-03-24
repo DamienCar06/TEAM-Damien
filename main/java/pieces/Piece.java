@@ -2,6 +2,9 @@ package pieces;
 
 import java.util.List;
 
+import board.Board;
+import utils.Position;
+
 
 
 public abstract class Piece {

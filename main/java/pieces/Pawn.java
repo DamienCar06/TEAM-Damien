@@ -3,6 +3,9 @@ package pieces;
 import java.util.ArrayList;
 import java.util.List;
 
+import board.Board;
+import utils.Position;
+
 
 public class Pawn extends Piece {
     /**
